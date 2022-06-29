@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { TypeOrmConfigService } from './typeorm/typeorm.service';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { MailModule } from './modules/mail/mail.module';
+import { PostModule } from './modules/post/post.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { AuthModule } from './modules/auth/auth.module';
     TypeOrmModule.forRootAsync({ useClass: TypeOrmConfigService }),
     UserModule,
     AuthModule,
+    MailModule,
+    PostModule,
   ],
   controllers: [AppController],
 })
