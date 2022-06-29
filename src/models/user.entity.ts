@@ -1,25 +1,46 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Unique } from "typeorm";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
+import { Post } from './post.entity';
 
 @Entity()
 export class User extends BaseEntity {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-    @CreateDateColumn({ type: 'timestamptz' })
-    created_at: Date;
+  @CreateDateColumn({ type: 'timestamptz' })
+  created_at: Date;
 
-    @Column()
-    fullName: string;
+  @Column()
+  fullName: string;
 
-    @Column({ type: 'varchar', unique: true })
-    email: string;
+  @Column({ type: 'varchar', unique: true })
+  email: string;
 
-    @Column({ type: 'varchar' })
-    password: string;
+  @Column({ type: 'varchar' })
+  password: string;
 
-    @Column({ nullable: true })
-    is_verified: boolean;
+  @Column()
+  is_verified: boolean;
 
-    @Column()
-    birthDate: Date;
+  @Column({ nullable: true })
+  confirmAccountToken: string;
+
+  @Column({ nullable: true })
+  confirmAccountTokenExpiredAt: Date;
+
+  @Column({ nullable: true })
+  confirmAccountTokenUpdatedAt: Date;
+
+  @Column()
+  birthDate: Date;
+
+  @OneToMany(() => Post, (post) => post.user)
+  posts: ReadonlyArray<Post>;
 }
