@@ -2,14 +2,29 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+import { Comment } from './comment.entity';
 import { User } from './user.entity';
 
+export enum PostStatus {
+  PUBLISHED = 'published',
+  DRAFT = 'drafted',
+  UNPUBLISHED = 'unpublished',
+}
+
+export enum PostVisibility {
+  PUBLIC = 'public',
+  PRIVATE = 'private',
+  PARITAL_PUBLIC = 'partial-public',
+}
+
 @Entity()
-export class Post {
-  constructor(props?: Partial<Post>) {
+export class PostItem {
+  constructor(props?: Partial<PostItem>) {
     if (props) {
       Object.assign(this, props);
     }
@@ -21,18 +36,35 @@ export class Post {
   @Column()
   content: string;
 
-  @Column()
+  @Column({ default: 0 })
   likes: number;
 
+  @Column('simple-array', { nullable: true })
+  comments: ReadonlyArray<Comment>;
+
+  @Column('simple-array', { nullable: true })
+  photos: ReadonlyArray<string>;
+
+  @Column({
+    type: 'enum',
+    enum: PostStatus,
+    default: PostStatus.DRAFT,
+  })
+  status: PostStatus;
+
+  @Column({
+    type: 'enum',
+    enum: PostVisibility,
+  })
+  visibility: PostVisibility;
+
   @Column()
-  comments: Array<any>; // todo: create a seperate entity
-
-  @Column({ nullable: true })
-  photos: Array<any>;
-
-  @ManyToOne(() => User, (user) => user.posts)
-  user: User;
+  @Index()
+  userId: string;
 
   @CreateDateColumn()
   created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }

@@ -1,5 +1,5 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
-import { Post } from './post.entity';
+import { PostItem } from './post.entity';
 
 @Entity()
 export class Comment {
@@ -8,7 +8,7 @@ export class Comment {
 
   @Column()
   @Index()
-  postId: Post;
+  postId: string;
 
   @Column()
   text: string;

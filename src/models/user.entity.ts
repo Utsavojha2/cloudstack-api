@@ -3,11 +3,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
-import { Post } from './post.entity';
 
 @Entity()
 export class User extends BaseEntity {
@@ -40,7 +37,4 @@ export class User extends BaseEntity {
 
   @Column()
   birthDate: Date;
-
-  @OneToMany(() => Post, (post) => post.user)
-  posts: ReadonlyArray<Post>;
 }
