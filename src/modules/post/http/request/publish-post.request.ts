@@ -20,10 +20,10 @@ export class PublishPostRequest {
   @ArrayMinSize(1)
   @ArrayMaxSize(3)
   @IsUUID('4', { each: true })
-  readonly photos?: ReadonlyArray<string>;
+  readonly photos: ReadonlyArray<string>;
 
   @IsNotEmpty()
   @IsString()
   @IsEnum(PostVisibility)
-  readonly visibility?: PostVisibility;
+  readonly visibility: PostVisibility;
 }

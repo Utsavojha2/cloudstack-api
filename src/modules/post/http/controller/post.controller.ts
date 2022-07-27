@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Put,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -35,56 +36,48 @@ export class PostController {
     if (!uploadedImages.length) {
       throw new BadRequestException('Image is required');
     }
-    return await Promise.all(
-      uploadedImages.map(async (images) => {
-        const imageIds = await Promise.all(
-          images.map(async (image) => {
-            const [filename] = Object.keys(image);
-            await this.postService.uploadImage(image[filename], {
-              public_id: filename,
-            });
-            return filename.split('_')[0];
-          }),
-        );
-        const [id] = Array.from(new Set(imageIds));
-        return id;
-      }),
-    );
+    return await this.postService.uploadPipedImages(uploadedImages);
   }
 
   @Post('/:userId/posts')
   @HttpCode(HttpStatus.CREATED)
   async createPost(
     @UUIDParam('userId') userId: string,
-    @Body() postInfo: PublishPostRequest,
+    @Body() postInfo: CreatePostRequest,
   ) {
     await this.postService.savePost(postInfo, userId);
   }
 
-  @Patch('/:userId/posts/:postId')
+  @Patch('/posts/:postId')
   @HttpCode(HttpStatus.ACCEPTED)
   async updatePost(
-    @UUIDParam('userId') userId: string,
-    @Body() postInfo: CreatePostRequest,
+    @UUIDParam('postId') postId: string,
+    @Body() postInfo: Partial<CreatePostRequest>,
   ) {
-    console.log(postInfo);
+    await this.postService.updatePost(postInfo, postId);
   }
 
   @Post('/:userId/posts/publish')
   @HttpCode(HttpStatus.ACCEPTED)
-  async publishPost(
+  async publishNewPost(
     @UUIDParam('userId') userId: string,
-    @Body() postInfo: CreatePostRequest,
+    @Body() postInfo: PublishPostRequest,
   ) {
-    console.log(postInfo);
+    await this.postService.publishNewPost(postInfo, userId);
   }
 
-  @Post('/:userId/posts/unpublish')
+  @Post('/posts/:postId/publish')
   @HttpCode(HttpStatus.ACCEPTED)
-  async unpublishPost(
-    @UUIDParam('userId') userId: string,
-    @Body() postInfo: CreatePostRequest,
+  async publishStalePost(
+    @UUIDParam('postId') postId: string,
+    @Body() postInfo: PublishPostRequest,
   ) {
-    console.log(postInfo);
+    await this.postService.publishDraftedPost(postInfo, postId);
+  }
+
+  @Post('/posts/:postId/unpublish')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async unpublishPost(@UUIDParam('postId') postId: string) {
+    await this.postService.unpublishPost(postId);
   }
 }
