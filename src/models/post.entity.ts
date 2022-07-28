@@ -39,7 +39,7 @@ export class PostItem {
   @Column({ default: 0 })
   likes: number;
 
-  @Column('simple-array', { nullable: true })
+  @Column('array', { nullable: true })
   comments: ReadonlyArray<Comment>;
 
   @Column('simple-array', { nullable: true })
