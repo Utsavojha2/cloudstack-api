@@ -1,17 +1,53 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Generated,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
-interface ICountry {
-  code: string;
-  label: string;
+interface IEmploymentInfo {
+  title: string;
+  company: string;
+  startDate: Date;
+  endDate?: Date;
+  isCurrentlyWorkingHere?: boolean;
 }
 
-interface IEmploymentInfo {
-  positionName: string;
-  companyName: string;
+interface ICrop {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  unit: string;
+}
+
+interface IPicturePayload {
+  id: string;
+  crop: ICrop | null;
+}
+
+export class EmploymentHistory {
+  @Column()
+  @Generated('uuid')
+  id: string;
+
+  @Column()
+  title: string;
+
+  @Column()
+  company: string;
+
+  @Column({ type: 'date' })
   startDate: Date;
-  endDate: Date;
-  isCurrentlyEmployedHere?: boolean;
+
+  @Column({ type: 'date', nullable: true, default: null })
+  endDate: Date | null;
+
+  @Column({ default: false })
+  isCurrentlyWorkingHere: boolean;
 }
 
 @Entity()
@@ -22,26 +58,33 @@ export class UserInfo {
   @Column()
   location: string;
 
-  @Column()
-  profilePictureId: string;
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+  })
+  profilePicture: IPicturePayload | null;
 
-  @Column()
-  coverImageId: string;
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+  })
+  coverPicture: IPicturePayload | null;
 
   @Column()
   role: string;
 
-  @Column('jsonb')
-  country: ICountry;
-
   @Column()
+  countryCode: string;
+
+  @Column({ nullable: true })
   bio: string;
 
-  @Column('array', { nullable: true })
-  jobHistory: ReadonlyArray<IEmploymentInfo>;
+  @Column('array', { nullable: true, default: null })
+  jobHistory: ReadonlyArray<EmploymentHistory>;
 
   @OneToOne(() => User, (user) => user.userInfo, {
     cascade: true,
   })
+  @JoinColumn()
   user: User;
 }

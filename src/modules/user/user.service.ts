@@ -18,7 +18,7 @@ export class UserService {
   ) {}
 
   findOneUser(query: Partial<User>) {
-    return this.userRepository.findOne(query);
+    return this.userRepository.findOneOrFail(query);
   }
 
   async saveUser(userBody: IUserPayload) {

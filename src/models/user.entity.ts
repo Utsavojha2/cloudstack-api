@@ -44,6 +44,5 @@ export class User extends BaseEntity {
   birthDate: Date;
 
   @OneToOne(() => UserInfo, (info) => info.user)
-  @JoinColumn()
   userInfo: UserInfo;
 }

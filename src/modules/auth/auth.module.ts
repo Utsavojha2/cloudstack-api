@@ -6,13 +6,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Token } from 'src/models/token.entity';
 import { UserModule } from '../user/user.module';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { TokenService } from './token/token.service';
 
 @Module({
   imports: [
-    UserModule, 
+    UserModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
@@ -21,13 +20,13 @@ import { TokenService } from './token/token.service';
           signOptions: {
             expiresIn: configService.get<string>('JWT_EXPIRATION'),
           },
-        }
+        };
       },
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    TypeOrmModule.forFeature([Token])
-  ], 
+    TypeOrmModule.forFeature([Token]),
+  ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService, JwtStrategy],
+  providers: [TokenService, JwtStrategy],
 })
 export class AuthModule {}

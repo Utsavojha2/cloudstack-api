@@ -1,16 +1,29 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../../auth/strategy/jwt.guard';
-import { UserService } from '../../user.service';
+import {
+  BadGatewayException,
+  Body,
+  Controller,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { UUIDParam } from 'src/decorator/uuid-param.decorator';
+import { JwtAuthGuard } from 'src/modules/auth/strategy/jwt.guard';
+import { UserService } from 'src/modules/user/user.service';
+import { SaveUserSettings } from '../requests/save-user-info.request';
+
 @UseGuards(JwtAuthGuard)
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get('/users/:id')
-  async getUser(@Query('id') id: string) {
-    return await this.userService.findOneUser({ id });
-  }
-
   @Post('/users/:id')
-  async saveUserInfo() {}
+  async saveUserInfo(
+    @UUIDParam('id') id: string,
+    @Body() settings: SaveUserSettings,
+  ) {
+    const user = await this.userService.findOneUser({ id });
+    if (!user) {
+      throw new BadGatewayException('User not found');
+    }
+    console.log(settings);
+  }
 }
