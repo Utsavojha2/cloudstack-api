@@ -1,7 +1,6 @@
 import {
   Column,
   Entity,
-  Generated,
   JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -29,27 +28,6 @@ interface IPicturePayload {
   crop: ICrop | null;
 }
 
-export class EmploymentHistory {
-  @Column()
-  @Generated('uuid')
-  id: string;
-
-  @Column()
-  title: string;
-
-  @Column()
-  company: string;
-
-  @Column({ type: 'date' })
-  startDate: Date;
-
-  @Column({ type: 'date', nullable: true, default: null })
-  endDate: Date | null;
-
-  @Column({ default: false })
-  isCurrentlyWorkingHere: boolean;
-}
-
 @Entity()
 export class UserInfo {
   @PrimaryGeneratedColumn('uuid')
@@ -62,13 +40,13 @@ export class UserInfo {
     type: 'jsonb',
     nullable: true,
   })
-  profilePicture: IPicturePayload | null;
+  profilePicture: IPicturePayload;
 
   @Column({
     type: 'jsonb',
     nullable: true,
   })
-  coverPicture: IPicturePayload | null;
+  coverPicture: IPicturePayload;
 
   @Column()
   role: string;
@@ -79,8 +57,8 @@ export class UserInfo {
   @Column({ nullable: true })
   bio: string;
 
-  @Column('array', { nullable: true, default: null })
-  jobHistory: ReadonlyArray<EmploymentHistory>;
+  @Column('simple-array', { nullable: true, default: null })
+  jobHistory: ReadonlyArray<IEmploymentInfo>;
 
   @OneToOne(() => User, (user) => user.userInfo, {
     cascade: true,

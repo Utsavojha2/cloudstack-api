@@ -2,18 +2,15 @@ import {
   BadRequestException,
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   Patch,
   Post,
-  Put,
   UploadedFiles,
-  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { UUIDParam } from 'src/decorator/uuid-param.decorator';
+import { UUIDParam } from 'src/core/decorator/uuid-param.decorator';
 import { JwtAuthGuard } from 'src/modules/auth/strategy/jwt.guard';
 import { multerOptions } from '../../../storage/multer.config';
 import { PostService } from '../../post.service';
@@ -41,7 +38,7 @@ export class PostController {
 
   @Post('/:userId/posts')
   @HttpCode(HttpStatus.CREATED)
-  async createPost(
+  async save(
     @UUIDParam('userId') userId: string,
     @Body() postInfo: CreatePostRequest,
   ) {
@@ -55,29 +52,5 @@ export class PostController {
     @Body() postInfo: Partial<CreatePostRequest>,
   ) {
     await this.postService.updatePost(postInfo, postId);
-  }
-
-  @Post('/:userId/posts/publish')
-  @HttpCode(HttpStatus.ACCEPTED)
-  async publishNewPost(
-    @UUIDParam('userId') userId: string,
-    @Body() postInfo: PublishPostRequest,
-  ) {
-    await this.postService.publishNewPost(postInfo, userId);
-  }
-
-  @Post('/posts/:postId/publish')
-  @HttpCode(HttpStatus.ACCEPTED)
-  async publishStalePost(
-    @UUIDParam('postId') postId: string,
-    @Body() postInfo: PublishPostRequest,
-  ) {
-    await this.postService.publishDraftedPost(postInfo, postId);
-  }
-
-  @Post('/posts/:postId/unpublish')
-  @HttpCode(HttpStatus.ACCEPTED)
-  async unpublishPost(@UUIDParam('postId') postId: string) {
-    await this.postService.unpublishPost(postId);
   }
 }

@@ -3,17 +3,20 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
-import { User } from './user.entity';
 
 export enum PostStatus {
   PUBLISHED = 'published',
   DRAFT = 'drafted',
   UNPUBLISHED = 'unpublished',
+}
+
+export enum PostVersion {
+  PUBLISHED = 'published',
+  LATEST = 'latest',
 }
 
 export enum PostVisibility {
@@ -31,7 +34,13 @@ export class PostItem {
   }
 
   @PrimaryGeneratedColumn('uuid')
+  @Index()
   id: string;
+
+  @Column({
+    type: 'uuid',
+  })
+  postId: string;
 
   @Column()
   content: string;
@@ -39,11 +48,15 @@ export class PostItem {
   @Column({ default: 0 })
   likes: number;
 
-  @Column('array', { nullable: true })
+  @Column({
+    type: 'jsonb',
+    array: true,
+    nullable: true,
+  })
   comments: ReadonlyArray<Comment>;
 
   @Column('simple-array', { nullable: true })
-  photos: ReadonlyArray<string>;
+  photoIds: ReadonlyArray<string>;
 
   @Column({
     type: 'enum',
@@ -51,6 +64,12 @@ export class PostItem {
     default: PostStatus.DRAFT,
   })
   status: PostStatus;
+
+  @Column({
+    type: 'enum',
+    enum: PostVersion,
+  })
+  version: PostVersion;
 
   @Column({
     type: 'enum',

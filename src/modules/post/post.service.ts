@@ -1,19 +1,19 @@
 import {
-  BadRequestException,
   Injectable,
   InternalServerErrorException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PostItem, PostStatus } from 'src/models/post.entity';
-import { Repository } from 'typeorm';
+import { getConnection, Repository } from 'typeorm';
 import {
   UploadApiErrorResponse,
   UploadApiOptions,
   UploadApiResponse,
   v2,
 } from 'cloudinary';
+import { PostItem, PostStatus, PostVersion } from 'src/models/post.entity';
 import { bufferToStream } from '../storage/storage.provider';
-import { PublishPostRequest } from './http/request/publish-post.request';
 import { CreatePostRequest } from './http/request/create-post.request';
 
 @Injectable()
@@ -59,53 +59,124 @@ export class PostService {
   }
 
   async savePost(post: CreatePostRequest, userId: string) {
+    const id = uuidv4();
+    const posts = { ...post, id, userId, postId: id };
     await this.postRepository
       .createQueryBuilder('post')
       .insert()
       .into(PostItem)
-      .values({ ...post, userId })
+      .values([
+        {
+          ...(post.status === PostStatus.PUBLISHED && {
+            ...posts,
+            version: PostVersion.PUBLISHED,
+          }),
+        },
+        {
+          ...posts,
+          id: uuidv4(),
+          version: PostVersion.LATEST,
+        },
+      ])
       .execute();
   }
 
   async updatePost(post: Partial<CreatePostRequest>, postId: string) {
-    await this.postRepository
-      .createQueryBuilder('post')
-      .update(PostItem)
-      .set(post)
-      .where('post.id = :postId', { postId })
-      .execute();
-  }
+    const postRepository = this.postRepository.createQueryBuilder('post');
+    const postItem = await this.postRepository.findOne({
+      id: postId,
+      status: PostStatus.PUBLISHED,
+    });
 
-  async publishNewPost(post: PublishPostRequest, userId: string) {
-    await this.postRepository
-      .createQueryBuilder('post')
-      .insert()
-      .into(PostItem)
-      .values({ ...post, userId, status: PostStatus.PUBLISHED })
-      .execute();
-  }
-
-  async publishDraftedPost(post: PublishPostRequest, postId: string) {
-    const draftedPost = await this.postRepository.findOneOrFail(postId);
-    if (!draftedPost) throw new BadRequestException('Post not found');
-    await this.postRepository
-      .createQueryBuilder('post')
-      .update(PostItem)
-      .set({ ...post, status: PostStatus.PUBLISHED })
-      .where('post.id = :postId', { postId })
-      .execute();
-  }
-
-  async unpublishPost(postId: string) {
-    const draftedPost = await this.postRepository.findOneOrFail(postId);
-    if (!draftedPost || draftedPost.status !== PostStatus.PUBLISHED) {
-      throw new BadRequestException('Post not found');
+    const queryRunner = await getConnection().createQueryRunner();
+    if (!postItem && post.status === PostStatus.UNPUBLISHED) {
+      throw new UnprocessableEntityException(
+        'Unable to unpublish post. Needs to be published first.',
+      );
     }
-    await this.postRepository
-      .createQueryBuilder('post')
+
+    if (!!postItem && post.status === PostStatus.PUBLISHED) {
+      await queryRunner.startTransaction();
+      try {
+        await Promise.all([
+          postRepository
+            .update(PostItem)
+            .set({
+              ...post,
+              version: PostVersion.PUBLISHED,
+            })
+            .where('post.id = :id', { id: postId })
+            .execute(),
+          postRepository
+            .update(PostItem)
+            .set({
+              ...post,
+              version: PostVersion.LATEST,
+            })
+            .where('post.postId = :id AND post.id != :id', { id: postId })
+            .execute(),
+        ]);
+        return await queryRunner.commitTransaction();
+      } catch (err) {
+        return await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
+      }
+    }
+
+    if (!!postItem && post.status === PostStatus.DRAFT) {
+      return await postRepository
+        .update(PostItem)
+        .set({
+          ...post,
+          version: PostVersion.LATEST,
+        })
+        .where(
+          'post.postId = :id AND post.id != :id AND post.version = :version',
+          { id: postId, version: PostVersion.LATEST },
+        )
+        .execute();
+    }
+
+    if (!!postItem && post.status === PostStatus.UNPUBLISHED) {
+      await queryRunner.startTransaction();
+      try {
+        await postRepository
+          .delete()
+          .from(PostItem)
+          .where(
+            `post.id = :id AND post.status = :status AND post.version = :version`,
+            {
+              id: postId,
+              status: PostStatus.PUBLISHED,
+              version: PostVersion.PUBLISHED,
+            },
+          )
+          .execute();
+
+        await postRepository
+          .update(PostItem)
+          .set({
+            ...post,
+            version: PostVersion.LATEST,
+          })
+          .where('post.postId = :id AND post.id != :id', { id: postId })
+          .execute();
+        return await queryRunner.commitTransaction();
+      } catch (err) {
+        return await queryRunner.rollbackTransaction();
+      } finally {
+        await queryRunner.release();
+      }
+    }
+
+    await postRepository
       .update(PostItem)
-      .set({ status: PostStatus.UNPUBLISHED })
-      .where('post.id = :postId', { postId })
+      .set({
+        ...post,
+        version: PostVersion.LATEST,
+      })
+      .where('post.id = :id', { id: postId })
       .execute();
   }
 }

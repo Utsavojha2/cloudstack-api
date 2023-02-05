@@ -5,12 +5,12 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { UUIDParam } from 'src/decorator/uuid-param.decorator';
+import { UUIDParam } from 'src/core/decorator/uuid-param.decorator';
 import { JwtAuthGuard } from 'src/modules/auth/strategy/jwt.guard';
 import { UserService } from 'src/modules/user/user.service';
 import { SaveUserSettings } from '../requests/save-user-info.request';
 
-@UseGuards(JwtAuthGuard)
+// @UseGuards(JwtAuthGuard)
 @Controller()
 export class UserController {
   constructor(private readonly userService: UserService) {}
