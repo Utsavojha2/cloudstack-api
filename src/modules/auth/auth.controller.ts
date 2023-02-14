@@ -48,7 +48,7 @@ export class AuthController {
     }
     const salt = await genSalt(10);
     const userId = uuid();
-    const { confirmAccountToken, confirmAccountTokenExpiredAt, ...savedUser } =
+    const { confirmAccountToken, ...savedUser } =
       await this.userService.saveUser({
         ...registerPayload,
         id: userId,
@@ -91,14 +91,15 @@ export class AuthController {
     if (!requestedUser || !isPasswordCorrect) {
       throw new BadRequestException('Invalid credentials');
     }
-    const accessToken = await this.jwtService.signAsync(
-      { id: requestedUser.id },
-      { expiresIn: '30s' },
-    );
-    const refreshToken = await this.jwtService.signAsync(
-      { id: requestedUser.id },
-      { secret: process.env.REFRESH_SECRET_KEY },
-    );
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync({ id: requestedUser.id }, { expiresIn: '1w' }),
+      this.jwtService.signAsync(
+        { id: requestedUser.id },
+        { secret: process.env.REFRESH_SECRET_KEY },
+      ),
+    ]);
+
     await this.tokenService.saveToken({
       userId: requestedUser.id,
       token: refreshToken,
@@ -131,24 +132,27 @@ export class AuthController {
         secret: process.env.CONFIRM_ACCOUNT_SECRET_KEY,
       },
     );
-    await this.userService.updateUser({
-      id: user.id,
-      confirmAccountToken: newConfirmAccountToken,
-      confirmAccountTokenExpiredAt: new Date(
-        new Date().setDate(new Date().getDate() + 2),
-      ),
-      confirmAccountTokenUpdatedAt: new Date(),
-    });
-    await this.mailService.sendEmailMessage({
-      email: user.email,
-      subject: 'Account Confirmation Email',
-      templateName: 'src/modules/mail/templates/confirm-account.hbs',
-      context: {
-        name: user.fullName,
-        confirmAccountUrl: `${process.env.FRONTEND_URL}/auth/confirm-account/${newConfirmAccountToken}`,
-      },
-    });
-    return { confirmAccountTokenUpdatedAt: user.confirmAccountTokenUpdatedAt };
+    const confirmAccountTokenUpdatedAt = new Date();
+    await Promise.all([
+      this.userService.updateUser({
+        id: user.id,
+        confirmAccountToken: newConfirmAccountToken,
+        confirmAccountTokenExpiredAt: new Date(
+          new Date().setDate(new Date().getDate() + 2),
+        ),
+        confirmAccountTokenUpdatedAt,
+      }),
+      this.mailService.sendEmailMessage({
+        email: user.email,
+        subject: 'Account Confirmation Email',
+        templateName: 'src/modules/mail/templates/confirm-account.hbs',
+        context: {
+          name: user.fullName,
+          confirmAccountUrl: `${process.env.FRONTEND_URL}/auth/confirm-account/${newConfirmAccountToken}`,
+        },
+      }),
+    ]);
+    return { confirmAccountTokenUpdatedAt };
   }
 
   @Get('/account-confirmation/:token')

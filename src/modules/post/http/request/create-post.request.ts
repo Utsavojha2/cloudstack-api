@@ -9,7 +9,7 @@ import {
   IsUUID,
   IsOptional,
 } from 'class-validator';
-import { PostVisibility } from 'src/models/post.entity';
+import { PostStatus, PostVisibility } from 'src/models/post.entity';
 
 export class CreatePostRequest {
   @IsNotEmpty()
@@ -22,11 +22,17 @@ export class CreatePostRequest {
   @ArrayMinSize(1)
   @ArrayMaxSize(3)
   @IsUUID('4', { each: true })
-  readonly photos?: ReadonlyArray<string>;
+  readonly photoIds?: ReadonlyArray<string>;
 
   @IsOptional()
   @IsNotEmpty()
   @IsString()
   @IsEnum(PostVisibility)
   readonly visibility?: PostVisibility;
+
+  @IsOptional()
+  @IsNotEmpty()
+  @IsString()
+  @IsEnum(PostVisibility)
+  readonly status?: PostStatus;
 }

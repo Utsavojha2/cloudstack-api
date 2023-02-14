@@ -3,8 +3,10 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { UserInfo } from './user-info.entity';
 
 @Entity()
 export class User extends BaseEntity {
@@ -23,7 +25,9 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar' })
   password: string;
 
-  @Column()
+  @Column({
+    default: false,
+  })
   is_verified: boolean;
 
   @Column({ nullable: true })
@@ -37,4 +41,7 @@ export class User extends BaseEntity {
 
   @Column()
   birthDate: Date;
+
+  @OneToOne(() => UserInfo, (info) => info.user)
+  userInfo: UserInfo;
 }

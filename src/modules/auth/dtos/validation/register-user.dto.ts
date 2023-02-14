@@ -7,8 +7,8 @@ import {
   IsDate,
   MaxDate,
 } from 'class-validator';
-import { Match } from 'src/decorator/match.decorator';
-import { IsOlderThan } from 'src/decorator/age-limit.decorator';
+import { Match } from 'src/core/decorator/match.decorator';
+import { IsOlderThan } from 'src/core/decorator/age-limit.decorator';
 import { Type } from 'class-transformer';
 
 export class CreateUserDto {
