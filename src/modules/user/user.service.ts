@@ -52,28 +52,32 @@ export class UserService {
     return await this.followerRepository.save(entity);
   }
 
-  async explore(userId: string) {
-    const concatFollowersSql =
-      'array_remove(array_agg(follower."followerId"), NULL)';
-
-    const user = await this.userRepository
+  async getUserFollowers(userId: string) {
+    return await this.userRepository
       .createQueryBuilder('user')
       .leftJoin(Follower, 'follower', `follower."userId" = user.id`)
       .select([
         'user.id' as 'id',
         'user.fullName' as 'fullName',
         'user.email' as 'email',
-        `${concatFollowersSql} as "followingIds"`,
+        `array_remove(array_agg(follower."followerId"), NULL) as "followingIds"`,
       ])
       .where('user.is_verified IS NOT NULL AND user.id = :id', { id: userId })
       .groupBy('user.id')
       .getRawOne();
+  }
 
-    const mutualFollowersSQL = `ARRAY(SELECT UNNEST(${concatFollowersSql}) INTERSECT SELECT UNNEST(ARRAY[${user.followingIds
+  async exploreNewFollowers(userId: string) {
+    const user = await this.getUserFollowers(userId);
+
+    const concatFollowersSQL =
+      'array_remove(array_agg(follower."followerId"), NULL)';
+
+    const mutualFollowersSQL = `ARRAY(SELECT UNNEST(${concatFollowersSQL}) INTERSECT SELECT UNNEST(ARRAY[${user.followingIds
       .map((id: string) => `'${id}'`)
       .join(',')}]::uuid[]))`;
 
-    const queryBuilder = await this.userRepository
+    return await this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect(Follower, 'follower', `follower."userId" = user.id`)
       .where('user.is_verified IS NOT NULL')
@@ -81,21 +85,19 @@ export class UserService {
       .andWhere('user.id NOT IN (:...followingIds)', {
         followingIds: user.followingIds,
       })
-      .having(`:id != ALL(${concatFollowersSql})`, {
+      .having(`:id != ALL(${concatFollowersSQL})`, {
         id: userId,
       })
       .select([
         'user.id' as 'userId',
         'user.fullName' as 'fullName',
         'user.email' as 'email',
-        `${concatFollowersSql} as "followingIds"`,
+        `${concatFollowersSQL} as "followingIds"`,
         `${mutualFollowersSQL} as mutualFollowings`,
       ])
       .groupBy('user.id')
       .orderBy(`array_length(${mutualFollowersSQL}, 1)`)
       .addOrderBy('user.created_at', 'ASC')
       .getRawMany();
-
-      
   }
 }

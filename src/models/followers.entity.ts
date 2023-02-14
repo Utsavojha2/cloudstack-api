@@ -1,7 +1,4 @@
-import { validateOrReject } from 'class-validator';
 import {
-  BeforeInsert,
-  BeforeUpdate,
   Column,
   CreateDateColumn,
   Entity,
@@ -28,11 +25,4 @@ export class Follower {
 
   @Column({ default: null })
   unFollowedAt: Date;
-
-  @BeforeInsert()
-  @BeforeUpdate()
-  async validate() {
-    console.log('ran');
-    await validateOrReject(this);
-  }
 }

@@ -1,4 +1,9 @@
 import {
+  PostStatus,
+  PostVersion,
+  PostVisibility,
+} from 'src/modules/post/types';
+import {
   Column,
   CreateDateColumn,
   Entity,
@@ -7,23 +12,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Comment } from './comment.entity';
-
-export enum PostStatus {
-  PUBLISHED = 'published',
-  DRAFT = 'drafted',
-  UNPUBLISHED = 'unpublished',
-}
-
-export enum PostVersion {
-  PUBLISHED = 'published',
-  LATEST = 'latest',
-}
-
-export enum PostVisibility {
-  PUBLIC = 'public',
-  PRIVATE = 'private',
-  PARITAL_PUBLIC = 'partial-public',
-}
 
 @Entity()
 export class PostItem {

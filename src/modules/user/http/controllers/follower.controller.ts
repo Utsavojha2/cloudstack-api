@@ -22,6 +22,12 @@ export class FollowerController {
   @Get('/account/explore')
   async exploreUsers(@Req() req: Request) {
     const user = req.user as User;
-    return await this.userService.explore(user?.id);
+    return await this.userService.exploreNewFollowers(user?.id);
+  }
+
+  @Get('/account/:accountType')
+  async isFollowing(@Req() req: Request) {
+    const user = req.user as User;
+    return await this.userService.exploreNewFollowers(user?.id);
   }
 }
